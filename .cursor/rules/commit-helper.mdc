@@ -1,0 +1,14 @@
+---
+description: Generate atomic conventional commit messages from repo changes
+globs:
+alwaysApply: false
+---
+
+Use `RULES.md` in this repository as the single source of truth for commit message generation.
+
+When the user asks for help generating, refining, or splitting a `git commit message`:
+
+- Read and follow `RULES.md`
+- Prefer staged changes over unstaged changes
+- Output directly usable commit messages
+- Do not run `git commit` automatically
