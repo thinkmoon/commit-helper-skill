@@ -1,119 +1,244 @@
 # commit-helper-skill
 
-这是一个面向提交信息整理场景的提示资产仓库，可同时适配：
+这是一个仅使用 `SKILL.md` 的 commit helper skill。
 
-- `Claude Code`：通过 `SKILL.md` 作为自定义 skill 使用
-- `Codex CLI`：通过 `AGENTS.md` 作为仓库级工作指令使用
-- `Cursor`：通过 `.cursor/rules/*.mdc` 作为项目规则使用
+它的目标是：基于当前仓库变更，优先判断是否应拆分为多个原子提交，并生成可直接使用的约定式 `git commit message`。当用户明确要求直接提交代码时，也应先走这套规则，再执行提交。
 
-它的核心目标是：基于当前仓库变更，优先判断是否应拆分为多个原子提交，并生成可直接使用的约定式 `git commit message`。
+## 适用场景
+
+这个 skill 适合下面几类场景：
+
+- 提交前不确定当前改动是否应该拆成多个 commit
+- 想快速生成符合 conventional commits 风格的 commit message
+- 已经写了 commit message 草稿，但想让 AI 帮你规范化
+- 希望在 Claude Code、Codex、Cursor 等支持 skills / prompt rules 的工具里复用同一套提交规则
 
 ## 项目目录
 
 ```txt
 commit-helper-skill/
-├── .cursor/
-│   └── rules/
-│       └── commit-helper.mdc
-├── AGENTS.md
 ├── README.md
-├── RULES.md
 └── SKILL.md
 ```
 
 各文件用途：
 
-- `RULES.md`：三端共享的唯一规则源
-- `SKILL.md`：给 `Claude Code` 使用的轻量入口，负责指向 `RULES.md`
-- `AGENTS.md`：给 `Codex CLI` 使用的轻量入口，负责指向 `RULES.md`
-- `.cursor/rules/commit-helper.mdc`：给 `Cursor` 使用的轻量入口，负责指向 `RULES.md`
-- `README.md`：安装、接入和维护说明
+- `SKILL.md`：唯一规则文件，供 AI 编程工具作为 skill 使用
+- `README.md`：安装与使用说明
 
-## 能力说明
+## 核心能力
 
-无论接入哪个工具，这套提示词都遵循同一目标：
+这个 skill 默认会按以下顺序工作：
 
-- 优先分析 `staged diff`，没有已暂存变更时再分析工作区变更
-- 先判断是否应拆分提交，再生成 commit message
-- 支持 `feat`、`fix`、`refactor`、`docs`、`test`、`chore`
-- 提交说明以中文描述变更目的，技术术语保留英文
+1. 查看当前仓库变更，优先读取 `staged diff`
+2. 如果没有已暂存内容，再分析工作区变更
+3. 判断这些改动是否应该拆分为多个原子提交
+4. 为每个建议提交生成对应的 conventional commit message
+5. 如果用户已提供 commit message 草稿，只做规范化修正
+
+它重点解决两个问题：
+
+- **先拆分，再命名**：不是先写 message，而是先判断提交边界
+- **强调原子提交**：按变更目的、模块边界、业务领域来区分是否需要拆分
+
+## 提交规范
+
+skill 内置的提交规范如下：
+
+- 优先使用 conventional commits
+- `type` 取值使用：`feat`、`fix`、`refactor`、`docs`、`test`、`chore`
+- `subject` 聚焦“为什么改”，而不是流水账式描述“改了什么”
+- 提交说明使用中文描述变更目的，技术术语保留英文
+- 如果 `scope` 不明显，可以省略
+- 一次 commit 只包含一个逻辑变更
+
+提交格式示例：
+
+```txt
+feat(auth): 支持用户登录态自动续期
+
+避免 token 在长时间使用场景下提前失效。
+```
 
 ## 安装方法
 
-### Claude Code
+### 方式一：放入 skills 目录
 
-适用场景：你希望在 `Claude Code` 里把它作为一个可调用的 skill。
-
-接入方式：
-
-1. 将当前项目放入你的本地 skills 目录，或拷贝其中的 `SKILL.md` 与 `RULES.md` 到某个 skill 目录下
-2. 确保 skill 目录根部存在 `SKILL.md`
-3. 确保 `SKILL.md` 能读取同目录下的 `RULES.md`
-4. 重新打开 `Claude Code`，或在新会话中使用该 skill
+把 `SKILL.md` 放到你的 skills 目录中即可。
 
 推荐目录示例：
 
 ```txt
 <your-skills-dir>/commit-helper/
-├── RULES.md
 └── SKILL.md
 ```
 
-### Codex CLI
+如果你的工具以目录名作为 skill 名称，通常可以直接通过 `commit-helper` 调用。
 
-适用场景：你希望在 `Codex CLI` 中进入该仓库后，自动继承这套 commit message 工作规则。
+### 方式二：作为项目内 skill 使用
 
-接入方式：
+如果你的工具支持项目内 skills，也可以直接保留当前仓库结构使用。
 
-1. 将 `AGENTS.md` 与 `RULES.md` 放在目标仓库根目录，或放在你希望生效的子目录根部
-2. 在该目录下启动 `Codex CLI`
-3. 当你提出“生成 commit message”“判断是否拆分提交”等请求时，Codex 会先读取 `AGENTS.md`，再按其中指示遵循 `RULES.md`
+这种方式适合：
 
-推荐目录示例：
+- 团队共享同一套提交规则
+- 希望跟随仓库一起版本管理
+- 需要在多个 AI 工具之间复用同一个 `SKILL.md`
 
-```txt
-<your-repo>/
-├── AGENTS.md
-├── RULES.md
-└── ...
-```
+## 使用方式
 
-### Cursor
+### 常见请求
 
-适用场景：你希望在 `Cursor` 中让 AI 助手遵循同样的 commit message 规则。
-
-接入方式：
-
-1. 将 `.cursor/rules/commit-helper.mdc` 放入目标项目的 `.cursor/rules/` 目录
-2. 将 `RULES.md` 放在项目根目录
-3. 打开该项目的 `Cursor`
-4. 在相关请求中触发这条规则，例如让它分析变更并生成 commit message
-
-推荐目录示例：
-
-```txt
-<your-repo>/
-├── .cursor/
-│   └── rules/
-│       └── commit-helper.mdc
-├── RULES.md
-└── ...
-```
-
-## 推荐维护方式
-
-如果你希望这个仓库长期同时服务于三种工具，建议这样维护：
-
-- 只修改 `RULES.md`
-- `SKILL.md`、`AGENTS.md`、`.cursor/rules/commit-helper.mdc` 只保留最小入口职责
-- `README.md` 只说明接入方式和目录结构
-
-这样后续改规则时，只需要维护一份核心文案。
-
-## 使用示例
-
-常见请求包括：
+你可以直接对 AI 说：
 
 - “根据当前变更帮我生成 commit message”
 - “看看这些改动要不要拆成两个 commit”
 - “把这个 commit message 改成更符合 conventional commits”
+- “按当前 diff 给我建议提交顺序”
+- “直接帮我提交代码”
+
+### 推荐使用流程
+
+最推荐的工作流是：
+
+1. 先完成代码修改
+2. 直接让 AI 基于当前仓库变更判断是否需要拆分提交
+3. 如果判断不需要拆分，直接生成单次提交的 message
+4. 如果判断需要拆分，直接给出建议的提交顺序与每次提交范围
+5. 在用户要求“直接提交代码”时，按建议顺序自动完成提交
+
+### 典型示例
+
+#### 示例 1：只有一个明确目的的改动
+
+比如你只修复了一个登录接口 bug，可以直接说：
+
+```txt
+根据当前变更帮我生成 commit message
+```
+
+预期结果：
+
+- skill 判断这些变更服务于同一个目的
+- 明确说明“建议单次提交”
+- 输出 1 条可直接使用的 commit message
+
+#### 示例 2：文档和代码一起改了
+
+比如你同时修改了业务代码和 `README.md`，可以说：
+
+```txt
+看看这些改动要不要拆成两个 commit
+```
+
+预期结果：
+
+- skill 会优先判断“文档”和“代码”是否应拆开
+- 如果应拆分，会按 `Commit 1`、`Commit 2` 输出建议
+- 每个提交都会附带建议纳入的文件范围和对应 message
+
+#### 示例 3：你已经写了一个草稿
+
+```txt
+把这个 commit message 改成更符合 conventional commits：
+update login logic
+```
+
+预期结果：
+
+- skill 不重新发散分析无关内容
+- 只对现有 message 做规范化修正
+- 输出更适合当前变更目的的写法
+
+#### 示例 4：用户要求“直接提交”
+
+```txt
+直接帮我提交代码
+```
+
+预期行为：
+
+- skill 仍然会先判断是否应该拆分提交
+- 不会跳过拆分分析直接粗暴合并提交
+- 先给出建议提交边界，再进入实际提交动作
+
+## 什么时候应该拆分提交
+
+通常以下情况应该拆分：
+
+- 服务端与客户端改动相互独立
+- 功能开发与重构混在一起
+- 测试代码与生产代码目的不同
+- 文档修改与业务代码变更彼此独立
+- 不同目录下的改动属于不同业务领域
+
+但以下情况通常不应机械拆分：
+
+- 多个文件共同服务于同一个需求
+- 一次修复跨越多个模块，但目标是同一个 bug
+- 一个功能改动天然同时涉及接口、实现和必要测试
+
+## 输出格式说明
+
+### 不需要拆分时
+
+一般会输出：
+
+- 建议单次提交的原因
+- 1 条可直接提交的 commit message
+
+### 需要拆分时
+
+一般会输出：
+
+- `Commit 1` / `Commit 2` / `Commit 3` ...
+- 每条提交建议纳入的文件或领域
+- 每条对应的 commit message
+
+示例结构：
+
+```txt
+Commit 1
+- 建议纳入的文件或领域：src/auth/**
+- commit message:
+fix(auth): 修复登录态刷新异常
+
+Commit 2
+- 建议纳入的文件或领域：README.md
+- commit message:
+docs: 补充登录流程说明
+```
+
+## 行为约定
+
+这个 skill 会：
+
+- 优先分析 `staged diff`，没有已暂存变更时再分析工作区变更
+- 先判断是否应拆分提交，再生成 commit message
+- 在用户明确要求提交代码时，仍然先做拆分判断，再执行提交
+- 使用中文描述变更目的，技术术语保留英文
+- 避免输出与提交规范无关的长篇说明
+
+这个 skill 不会：
+
+- 默认把所有改动粗暴合并成一个提交
+- 在没有判断提交边界前直接写 message
+- 在用户只是要求“生成 message”时直接执行 `git commit`
+
+## 使用建议
+
+为了让输出更准确，建议你在提问时补充少量上下文，例如：
+
+- “这次主要是修复线上登录超时问题”
+- “README 变更只是为了配合这次接口调整”
+- “我希望尽量拆成最小原子提交”
+
+这些背景能帮助 AI 更准确地判断：
+
+- 是否真的要拆分提交
+- `type` 应该用 `feat`、`fix` 还是 `refactor`
+- `subject` 应该突出哪个变更目的
+
+## 一句话总结
+
+如果你想让 AI 在提交前先判断“该怎么分”，再判断“该怎么写”，这个 skill 就是为这个流程准备的。
