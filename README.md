@@ -97,6 +97,124 @@ feat(auth): 支持用户登录态自动续期
 - “按当前 diff 给我建议提交顺序”
 - “直接帮我提交代码”
 
+### 在 Claude Code 中使用
+
+Claude Code 支持使用 skills，因此可以直接复用这份 `SKILL.md`。
+
+推荐目录示例：
+
+```txt
+<your-skills-dir>/commit-helper/
+└── SKILL.md
+```
+
+常见调用方式：
+
+```txt
+/commit-helper
+```
+
+也可以附带背景信息：
+
+```txt
+/commit-helper 这次主要是修复登录超时，并顺手补了文档
+```
+
+如果你更习惯自然语言，也可以直接说：
+
+```txt
+根据当前变更帮我判断是否需要拆分提交，并生成 commit message
+```
+
+推荐流程：
+
+1. 完成代码修改并按需要 `git add`
+2. 在 Claude Code 中调用 `commit-helper`
+3. 先查看是否建议拆分为多个原子提交
+4. 确认 message 后，再继续执行实际提交
+
+### 在 Cursor 中使用
+
+Cursor 同样支持 skills / 项目规则复用，因此也可以直接使用这份 `SKILL.md`，而不是手工复制长提示词。
+
+推荐方式：
+
+- 把 `SKILL.md` 放到 Cursor 可识别的 skills / rules 目录
+- 或保留在项目中，以项目级规则方式复用
+- 调用时直接使用 `commit-helper` 对当前仓库变更进行分析
+
+常见使用场景：
+
+```txt
+commit-helper
+```
+
+或：
+
+```txt
+commit-helper 这次主要是重构登录流程，README 只是配套更新
+```
+
+你也可以直接请求 Cursor：
+
+```txt
+使用 commit-helper skill，根据当前变更判断是否需要拆分 commit，并生成 commit message
+```
+
+推荐流程与 Claude Code 基本一致：
+
+1. 完成修改
+2. 让 Cursor 调用 `commit-helper`
+3. 先看拆分建议，再看 commit message
+4. 最后再决定是否实际提交
+
+### 在 Codex 中使用
+
+Codex 也支持 skills / 仓库规则文件的工作流，因此这份 `SKILL.md` 可以继续复用，不需要为 Codex 单独维护另一套提交提示词。
+
+推荐目录结构仍然是：
+
+```txt
+<your-skills-dir>/commit-helper/
+└── SKILL.md
+```
+
+常见调用方式：
+
+```txt
+/commit-helper
+```
+
+或附带背景：
+
+```txt
+/commit-helper 这次改动同时涉及接口和文档，帮我先判断要不要拆分提交
+```
+
+也可以直接说：
+
+```txt
+使用 commit-helper skill，按当前仓库变更给我建议提交顺序和 commit message
+```
+
+推荐流程：
+
+1. 在仓库目录中完成代码修改
+2. 调用 `commit-helper`
+3. 先确认提交边界是否需要拆分
+4. 再根据输出结果执行实际提交
+
+### 三种工具的共同点
+
+Claude Code、Cursor 和 Codex 都可以复用同一个 `SKILL.md`，因此推荐把这份 skill 作为单一规则来源维护。
+
+这样做的好处是：
+
+- 三个工具共用同一套提交规范
+- 不需要为不同工具重复维护多份 prompt
+- 团队可以围绕同一个 skill 持续迭代提交约定
+- 提交前都能先判断“是否拆分”，再判断“如何命名”
+
 ### 推荐使用流程
 
 最推荐的工作流是：
