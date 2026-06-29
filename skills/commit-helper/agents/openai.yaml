@@ -1,0 +1,4 @@
+interface:
+  display_name: "Commit Helper"
+  short_description: "生成原子化 conventional commit message"
+  default_prompt: "Use $commit-helper to analyze the current repository diff and propose atomic conventional commit messages."
