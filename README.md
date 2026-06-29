@@ -19,7 +19,7 @@ skills/commit-helper/
     └── openai.yaml
 ```
 
-仓库根目录的 `SKILL.md` 是兼容副本，用于支持仍然从仓库根目录读取 `SKILL.md` 的工具或旧工作流；新安装请优先使用 `skills/commit-helper/`。
+仓库根目录不再保留兼容副本；新安装请统一使用 `skills/commit-helper/`。
 
 ## Codex 安装
 
@@ -129,11 +129,9 @@ Commit 2
 docs: 补充登录流程说明
 ```
 
-## 目录兼容性
+## 目录结构
 
-这个仓库同时保留两种入口：
+这个仓库只保留一个标准安装入口：
 
-- `skills/commit-helper/SKILL.md`：标准安装入口，推荐用于 GitHub skill 安装
-- `SKILL.md`：根目录兼容入口，用于支持直接读取仓库根目录 skill 的工具
-
-维护时请保持两份 `SKILL.md` 内容一致。
+- `skills/commit-helper/SKILL.md`：标准 skill 入口，用于 GitHub skill 安装
+- `skills/commit-helper/agents/openai.yaml`：Codex UI 元数据
