@@ -1,6 +1,6 @@
 # commit-helper-skill
 
-`commit-helper` 是一个面向 AI 编程 agent 的提交辅助 skill。它会在提交前先分析当前仓库变更，判断是否应拆分为多个原子 commit，再生成可直接使用的 conventional commit message。
+`commit-helper` 是一个面向 AI 编程 agent 的提交辅助 skill。它会把提交工作委托给当前运行时可用的最低成本 subagent，由 subagent 分析变更、拆分原子 commit、生成 conventional commit message，并在用户明确授权时完成 `git commit`。
 
 ## 推荐安装入口
 
@@ -59,6 +59,12 @@ skills/commit-helper
 使用 commit-helper，根据当前变更判断是否需要拆分 commit，并生成 commit message
 ```
 
+要让 subagent 直接完成提交：
+
+```txt
+使用 commit-helper，分析当前变更并完成原子提交
+```
+
 也可以补充背景：
 
 ```txt
@@ -76,11 +82,12 @@ skills/commit-helper
 
 `commit-helper` 默认会：
 
-1. 优先读取 staged diff；如果没有 staged 变更，再分析工作区变更
-2. 先判断是否应拆分提交，再生成 commit message
-3. 按业务领域、模块边界和变更目的判断原子提交边界
-4. 对每个建议提交分别选择合适的 `type` 和可选 `scope`
-5. 在用户明确要求提交代码时，仍然先做拆分判断
+1. 只调度一个最低成本的可用 subagent；运行时不支持选模型时回退到默认 subagent
+2. 优先读取 staged diff；如果没有 staged 变更，再分析工作区变更
+3. 先判断是否应拆分提交，再生成 commit message
+4. 按业务领域、模块边界和变更目的判断原子提交边界
+5. 用户明确要求提交时，精确暂存各原子变更并执行 `git commit`
+6. 不自动 `pull` 或 `push`，除非用户明确要求
 
 ## 提交规范
 

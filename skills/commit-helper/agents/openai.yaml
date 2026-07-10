@@ -1,4 +1,4 @@
 interface:
   display_name: "Commit Helper"
-  short_description: "生成原子化 conventional commit message"
-  default_prompt: "Use $commit-helper to analyze the current repository diff and propose atomic conventional commit messages."
+  short_description: "调用最低成本 subagent 分析变更并完成原子化代码提交"
+  default_prompt: "Use $commit-helper to delegate the current repository changes to the cheapest available subagent and complete atomic commits."
